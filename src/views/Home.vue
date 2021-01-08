@@ -6,9 +6,22 @@
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
+      <ion-item v-if="currentUser">
+        <ion-label>Pulsa para realizar acciones</ion-label>
+      </ion-item>
       <ion-list v-for="film in films" :key="film.id">
         <!--<ion-item style="--border-color:grey">-->
-        <ion-item class="ion-item">
+        <ion-item v-if="!currentUser" class="ion-item">
+          <ion-label>
+            <h2>{{film.title}}</h2>
+            <p>{{film.description}}</p>
+            </ion-label>
+            <div>
+              <span style="vertical-align: middle">{{film.calification}}</span>&nbsp;
+              <ion-icon style="vertical-align:middle" :icon="star"></ion-icon>
+            </div>
+        </ion-item>
+        <ion-item v-if="currentUser" @click="presentActionSheet(film.id)" class="ion-item">
           <ion-label>
             <h2>{{film.title}}</h2>
             <p>{{film.description}}</p>
@@ -19,26 +32,13 @@
             </div>
         </ion-item>
       </ion-list>
-    
-    <!--<ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
-    
-      <div id="container">
-        <strong>Aquí se mostrarán las películas</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-      </div>
-    </ion-content>-->
     </ion-content>
   </ion-page>
   
 </template>
 
 <script>
-import { /*IonContent,*/IonIcon, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { /*IonContent,*/IonIcon, IonHeader, IonPage, IonTitle, IonToolbar, actionSheetController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { star } from 'ionicons/icons';
 
@@ -64,6 +64,12 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
+  computed: {
+      currentUser() {
+          //return this.$store.state.auth.user;/
+          return JSON.parse(localStorage.getItem('user'))
+      },
+  },
   data() {
       return {
         film: new Film(),
@@ -75,7 +81,29 @@ export default defineComponent({
     created(){
         this.obtenerFilms()
     },
+    updated: function () {
+    this.$nextTick(function () {
+      this.obtenerFilms})
+    },
     methods: {
+      async presentActionSheet(id) {
+      const actionSheet = await actionSheetController
+        .create({
+          header: 'Acciones',
+          cssClass: 'my-custom-class',
+          buttons: [
+            {
+              text: 'Borrar',
+              role: 'destructive',
+              handler: () => {
+                this.deleteFilm(id)
+                console.log('Delete clicked')
+              },
+            },
+          ],
+        });
+      return actionSheet.present();
+    },
         obtenerFilms(){
             fetch('http://192.168.1.10:3000/films')
             .then(res => res.json())
@@ -102,7 +130,7 @@ export default defineComponent({
             })
             console.log(id)
         }
-    }
+    },
 });
 </script>
 
